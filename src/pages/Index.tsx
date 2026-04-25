@@ -1,13 +1,14 @@
 import { CSSProperties, FormEvent, PointerEvent, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Sparkles, Star, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, RefreshCcw, Sparkles, Star, Zap } from "lucide-react";
 import { GameBoard } from "@/components/game/GameBoard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-type Screen = "landing" | "auth" | "fighters" | "game";
+type Screen = "landing" | "auth" | "fighters" | "game" | "fezzi";
 type AuthMode = "login" | "signup";
 type FighterId = "VIKI" | "EVA";
+type LandingExperience = "cipherflow" | "fezzi";
 
 type Fighter = {
   id: FighterId;
@@ -24,6 +25,7 @@ type Fighter = {
 
 const LANDING_VIDEO_SRC = "/playnest-hero.mp4";
 const GAMEPLAY_AUDIO_SRC = "/east-duo-chubina-live.mp3";
+const FEZZI_APP_URL = "/fezzi-app";
 const fighters: Record<FighterId, Fighter> = {
   VIKI: {
     id: "VIKI",
@@ -108,7 +110,15 @@ function LandingVideoBackdrop() {
   );
 }
 
-function LandingScreen({ onContinue }: { onContinue: () => void }) {
+function LandingScreen({
+  experience,
+  onSelectExperience,
+  onContinue,
+}: {
+  experience: LandingExperience;
+  onSelectExperience: (experience: LandingExperience) => void;
+  onContinue: () => void;
+}) {
   return (
     <main className="relative min-h-screen bg-[hsl(233_70%_8%)] text-white">
       <div className="relative min-h-screen overflow-hidden">
@@ -147,13 +157,34 @@ function LandingScreen({ onContinue }: { onContinue: () => void }) {
                 </h1>
               </div>
 
+              <div className="inline-flex rounded-full border border-white/16 bg-black/34 p-1 shadow-[0_16px_36px_rgba(0,0,0,0.24)] backdrop-blur-md">
+                {([
+                  { id: "cipherflow", label: "CipherFlow" },
+                  { id: "fezzi", label: "Fezzi 3D" },
+                ] as const).map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => onSelectExperience(entry.id)}
+                    className={cn(
+                      "rounded-full px-5 py-2 font-display text-xs font-black uppercase tracking-[0.22em] transition-all",
+                      experience === entry.id
+                        ? "bg-[linear-gradient(135deg,hsl(286_100%_60%),hsl(203_100%_54%),hsl(47_100%_56%))] text-white shadow-[0_12px_24px_rgba(0,0,0,0.28)]"
+                        : "text-white/72 hover:text-white",
+                    )}
+                  >
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="flex flex-wrap gap-3">
                 <Button
                   size="lg"
                   onClick={onContinue}
                   className="h-12 rounded-full border-0 bg-[linear-gradient(135deg,hsl(286_100%_60%),hsl(203_100%_54%),hsl(47_100%_56%))] px-7 font-display text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_16px_36px_hsl(262_100%_52%/0.42)]"
                 >
-                  Start Puzzle
+                  {experience === "fezzi" ? "Enter Fezzi 3D" : "Start Puzzle"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -163,6 +194,50 @@ function LandingScreen({ onContinue }: { onContinue: () => void }) {
               <div className="hidden h-72 w-72 lg:block" />
             </div>
           </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function FezziScreen({ onBack }: { onBack: () => void }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  return (
+    <main className="fixed inset-0 z-[120] overflow-hidden bg-black text-white">
+      <iframe
+        ref={iframeRef}
+        src={FEZZI_APP_URL}
+        title="Fezzi 3D Website"
+        className="absolute inset-0 h-full w-full border-0 bg-black"
+      />
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-between gap-3 p-4 sm:p-6">
+        <div className="pointer-events-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="border-black/35 bg-white/58 font-display tracking-widest text-black shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/72"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+        </div>
+
+        <div className="pointer-events-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => iframeRef.current?.contentWindow?.location.reload()}
+            className="border-black/35 bg-white/58 font-display tracking-widest text-black shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/72"
+          >
+            <RefreshCcw className="mr-2 h-4 w-4" /> Reload
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => window.open(FEZZI_APP_URL, "_blank", "noopener,noreferrer")}
+            className="border-black/35 bg-white/58 font-display tracking-widest text-black shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/72"
+          >
+            <ExternalLink className="mr-2 h-4 w-4" /> Open
+          </Button>
         </div>
       </div>
     </main>
@@ -823,9 +898,20 @@ function GameScreen({ fighter, onBackToFighters }: { fighter: Fighter; onBackToF
 const Index = () => {
   const [screen, setScreen] = useState<Screen>("landing");
   const [selectedFighter, setSelectedFighter] = useState<FighterId>("VIKI");
+  const [landingExperience, setLandingExperience] = useState<LandingExperience>("cipherflow");
 
   if (screen === "landing") {
-    return <LandingScreen onContinue={() => setScreen("auth")} />;
+    return (
+      <LandingScreen
+        experience={landingExperience}
+        onSelectExperience={setLandingExperience}
+        onContinue={() => setScreen(landingExperience === "fezzi" ? "fezzi" : "auth")}
+      />
+    );
+  }
+
+  if (screen === "fezzi") {
+    return <FezziScreen onBack={() => setScreen("landing")} />;
   }
 
   if (screen === "auth") {

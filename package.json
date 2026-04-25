@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-orchestrator.mjs",
+    "dev:client": "vite",
+    "dev:fezzi": "npm --prefix ./Fezzi-3D-Website-master run next:dev -- --hostname 127.0.0.1 --port 3000",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
