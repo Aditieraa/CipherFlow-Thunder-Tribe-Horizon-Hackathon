@@ -1,6 +1,7 @@
 import { CSSProperties, FormEvent, PointerEvent, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ExternalLink, RefreshCcw, Sparkles, Star, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Star, Zap } from "lucide-react";
 import { GameBoard } from "@/components/game/GameBoard";
+import { FezziExperience } from "@/components/fezzi/FezziExperience";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ type Fighter = {
 
 const LANDING_VIDEO_SRC = "/playnest-hero.mp4";
 const GAMEPLAY_AUDIO_SRC = "/east-duo-chubina-live.mp3";
-const FEZZI_APP_URL = "/fezzi-app";
+const FEZZI_HASH = "#fezzi";
 const fighters: Record<FighterId, Fighter> = {
   VIKI: {
     id: "VIKI",
@@ -194,50 +195,6 @@ function LandingScreen({
               <div className="hidden h-72 w-72 lg:block" />
             </div>
           </section>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function FezziScreen({ onBack }: { onBack: () => void }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  return (
-    <main className="fixed inset-0 z-[120] overflow-hidden bg-black text-white">
-      <iframe
-        ref={iframeRef}
-        src={FEZZI_APP_URL}
-        title="Fezzi 3D Website"
-        className="absolute inset-0 h-full w-full border-0 bg-black"
-      />
-
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-between gap-3 p-4 sm:p-6">
-        <div className="pointer-events-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="border-black/35 bg-white/58 font-display tracking-widest text-black shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/72"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-          </Button>
-        </div>
-
-        <div className="pointer-events-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => iframeRef.current?.contentWindow?.location.reload()}
-            className="border-black/35 bg-white/58 font-display tracking-widest text-black shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/72"
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" /> Reload
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => window.open(FEZZI_APP_URL, "_blank", "noopener,noreferrer")}
-            className="border-black/35 bg-white/58 font-display tracking-widest text-black shadow-[0_18px_48px_rgba(0,0,0,0.22)] backdrop-blur-md hover:bg-white/72"
-          >
-            <ExternalLink className="mr-2 h-4 w-4" /> Open
-          </Button>
         </div>
       </div>
     </main>
@@ -900,6 +857,28 @@ const Index = () => {
   const [selectedFighter, setSelectedFighter] = useState<FighterId>("VIKI");
   const [landingExperience, setLandingExperience] = useState<LandingExperience>("cipherflow");
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash === FEZZI_HASH) {
+      setLandingExperience("fezzi");
+      setScreen("fezzi");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const nextUrl =
+      screen === "fezzi"
+        ? `${window.location.pathname}${window.location.search}${FEZZI_HASH}`
+        : `${window.location.pathname}${window.location.search}`;
+
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentUrl !== nextUrl) {
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }, [screen]);
+
   if (screen === "landing") {
     return (
       <LandingScreen
@@ -911,7 +890,7 @@ const Index = () => {
   }
 
   if (screen === "fezzi") {
-    return <FezziScreen onBack={() => setScreen("landing")} />;
+    return <FezziExperience onBack={() => setScreen("landing")} />;
   }
 
   if (screen === "auth") {

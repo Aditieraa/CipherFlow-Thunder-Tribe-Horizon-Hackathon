@@ -11,37 +11,6 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
-    proxy: {
-      "/fezzi-app": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/fezzi-app/, "") || "/",
-      },
-      "/_next": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-      },
-      "/Soda-can.gltf": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-      },
-      "/Soda-can.bin": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-      },
-      "/labels": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-      },
-      "/hdr": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-      },
-      "/fonts": {
-        target: "http://127.0.0.1:3000",
-        changeOrigin: true,
-      },
-    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
